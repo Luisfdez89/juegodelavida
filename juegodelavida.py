@@ -1,84 +1,92 @@
-
 import copy, random, sys, time
 
-# Constantes
-ANCHO = 79   # Ancho de la cuadrícula
-ALTO = 20  # Alto de la cuadrícula
+# Variables globales
+ANCHO = 0   # Ancho de la cuadrícula
+ALTO = 0    # Alto de la cuadrícula
+VIVO = ''   # Carácter para la celda viva
+MUERTO = '' # Carácter para la celda muerta
 
-VIVO = 'O'  # Carácter para la celda viva
-MUERTO = ' '   # Carácter para la celda muerta
+def inicializar_parametros():
+    global ANCHO, ALTO, VIVO, MUERTO
+    ANCHO = int(input("Introduce el ancho de la cuadrícula: "))
+    ALTO = int(input("Introduce el alto de la cuadrícula: "))
+    VIVO = input("Introduce el carácter para la célula viva: ")
+    MUERTO = input("Introduce el carácter para la célula muerta: ")
 
-# Las variables celulas y siguientesCelulas son diccionarios que contienen
-# el estado actual del juego y el siguiente.
-# Las claves del diccionario son tuplas que pueden tener el valor VIVO o MUERTO
-siguientesCelulas = {}
+def inicializar_celulas():
+    siguientesCelulas = {}
+    for x in range(ANCHO):
+        for y in range(ALTO):
+            if random.randint(0, 1) == 0:
+                siguientesCelulas[(x, y)] = VIVO
+            else:
+                siguientesCelulas[(x, y)] = MUERTO
+    return siguientesCelulas
 
-# Asignamos valores aleatorios a las células iniciales
-for x in range(ANCHO):
-    for y in range(ALTO):
-        # 50% de posibilidades de estar viva o muerta
-        if random.randint(0, 1) == 0:
-            siguientesCelulas[(x, y)] = VIVO
-        else:
-            siguientesCelulas[(x, y)] = MUERTO
-
-while True:  # bucle principal del programa
-    # Cada iteración de este bucle es una generación de la simulación del juego de la vida
-
-    print('\n' * 50)  # Separación entre generaciones
-    celulas = copy.deepcopy(siguientesCelulas)
-
-    # Imprimimos las células por pantalla
+def imprimir_generacion(celulas):
     for y in range(ALTO):
         for x in range(ANCHO):
             print(celulas[(x, y)], end='')
         print()
-    print('Pulsa Ctrl-C para parar.')
 
-    # Calculamos la nueva generación de células en función de los valores actuales
+def calcular_vecinas(x, y, celulas):
+    izquierda  = (x - 1) % ANCHO
+    derecha = (x + 1) % ANCHO
+    arriba = (y - 1) % ALTO
+    abajo = (y + 1) % ALTO
+
+    numVecinasVivas = 0
+    if celulas[(izquierda, arriba)] == VIVO:
+        numVecinasVivas += 1
+    if celulas[(x, arriba)] == VIVO:
+        numVecinasVivas += 1
+    if celulas[(derecha, arriba)] == VIVO:
+        numVecinasVivas += 1
+    if celulas[(izquierda, y)] == VIVO:
+        numVecinasVivas += 1
+    if celulas[(derecha, y)] == VIVO:
+        numVecinasVivas += 1
+    if celulas[(izquierda, abajo)] == VIVO:
+        numVecinasVivas += 1
+    if celulas[(x, abajo)] == VIVO:
+        numVecinasVivas += 1
+    if celulas[(derecha, abajo)] == VIVO:
+        numVecinasVivas += 1
+
+    return numVecinasVivas
+
+def calcular_siguiente_generacion(celulas):
+    siguientesCelulas = {}
     for x in range(ANCHO):
         for y in range(ALTO):
-            # Obtenemos las coordenadas de las vecinas incluso si están en el límite
-            izquierda  = (x - 1) % ANCHO
-            derecha = (x + 1) % ANCHO
-            arriba = (y - 1) % ALTO
-            abajo = (y + 1) % ALTO
+            numVecinasVivas = calcular_vecinas(x, y, celulas)
 
-            # Calculamos el número de células vecinas vivas
-            numVecinasVivas = 0
-            if celulas[(izquierda, arriba)] == VIVO:
-                numVecinasVivas += 1
-            if celulas[(x, arriba)] == VIVO:
-                numVecinasVivas += 1
-            if celulas[(derecha, arriba)] == VIVO:
-                numVecinasVivas += 1
-            if celulas[(izquierda, y)] == VIVO:
-                numVecinasVivas += 1
-            if celulas[(derecha, y)] == VIVO:
-                numVecinasVivas += 1
-            if celulas[(izquierda, abajo)] == VIVO:
-                numVecinasVivas += 1
-            if celulas[(x, abajo)] == VIVO:
-                numVecinasVivas += 1
-            if celulas[(derecha, abajo)] == VIVO:
-                numVecinasVivas += 1
-
-            # Basamos el valor de la nueva generación en función
-            # de los valores actuales
-            if celulas[(x, y)] == VIVO and (numVecinasVivas == 2
-                                            or numVecinasVivas == 3):
-                    # Cálulas vivas con 2 o 3 vecinas vivas permanecen vivas
-                    siguientesCelulas[(x, y)] = VIVO
+            if celulas[(x, y)] == VIVO and (numVecinasVivas == 2 or numVecinasVivas == 3):
+                siguientesCelulas[(x, y)] = VIVO
             elif celulas[(x, y)] == MUERTO and numVecinasVivas == 3:
-                # Células muertas con 3 vecinas vivas cobran vida
                 siguientesCelulas[(x, y)] = VIVO
             else:
-                # En cualquier otro caso continuan muertas
                 siguientesCelulas[(x, y)] = MUERTO
 
-    try:
-        time.sleep(1)  # Añadimos un segundo de pausa para evitar parpadeos
-    except KeyboardInterrupt:
-        print("Juego de la vida de Conway")
-        print("https://es.wikipedia.org/wiki/Juego_de_la_vida")
-        sys.exit()  # Cuando se pulsa CTRL+C termina el programa
+    return siguientesCelulas
+
+def main():
+    inicializar_parametros()
+    siguientesCelulas = inicializar_celulas()
+
+    while True:
+        print('\n' * 50)  # Separación entre generaciones
+        imprimir_generacion(siguientesCelulas)
+        print('Pulsa Ctrl-C para parar.')
+
+        siguientesCelulas = calcular_siguiente_generacion(siguientesCelulas)
+
+        try:
+            time.sleep(1)  # Añadimos un segundo de pausa para evitar parpadeos
+        except KeyboardInterrupt:
+            print("Juego de la vida de Conway")
+            print("https://es.wikipedia.org/wiki/Juego_de_la_vida")
+            sys.exit()  # Cuando se pulsa CTRL+C termina el programa
+
+if __name__ == "__main__":
+    main()

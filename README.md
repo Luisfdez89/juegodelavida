@@ -1,4 +1,4 @@
-# MAFF
+# LFG
 
 CFGS Desenrotllament d'Aplicacions Web
 
